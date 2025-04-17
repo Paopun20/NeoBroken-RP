@@ -1,55 +1,82 @@
-# make zip file for deployment
+# make zip file for deployment and deploy to GitHub Pages
 name: Build and Deploy
+
 on:
   push:
     branches:
       - main
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: false # Or true if you want to cancel running builds on new pushes
 
 jobs:
   make-zip:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4 # Use latest checkout action
 
       - name: Set up Python 3.x
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5 # Use latest setup-python action
         with:
-          python-version: '3.x'
+          python-version: '3.x' # Or specify a specific version like '3.11'
 
+      # Optional: Only run if requirements.txt exists and is not empty
       - name: Install dependencies
+        if: hashFiles('requirements.txt') != ''
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Create zip file
-        run: python -m main.py
+        run: python main.py # Run the script directly
+
+      # --- ADDED STEP: Upload the 'build' directory ---
+      - name: Upload zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact # Name for the artifact
+          path: build/ # Upload the entire 'build' directory
+
   build-deploy:
     runs-on: ubuntu-latest
-    needs: make-zip
+    needs: make-zip # Depends on the make-zip job completing successfully
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4 # Checkout the repository content
+
+      # --- ADDED STEP: Download the 'build' directory ---
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact # Must match the upload name
+          # No path specified, downloads to the current working directory (repo root)
+          # This will recreate the 'build' directory in the runner's workspace
+
+      # --- GitHub Pages Steps ---
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      # This step now builds the site from the checked-out code PLUS the downloaded 'build' directory
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
-          source: ./
+          source: ./ # Source is the repo root (which now includes the 'build' dir)
           destination: ./_site
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
 
-  # Deployment job
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        # This will upload the contents of ./_site, which should now include 'build/my_files.zip'
+
+  # Deployment job (no changes needed here)
   deploy:
     environment:
       name: github-pages
