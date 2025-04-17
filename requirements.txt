@@ -1,0 +1,4 @@
+# requirements.txt
+# No external dependencies are required for main.py
+# The script uses built-in libraries only.
+# However, if you want to use the `requests` library for making HTTP requests,
