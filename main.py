@@ -19,7 +19,7 @@ def make_zip():
         # Check if the source directory exists before walking
         if not os.path.isdir(source_dir):
             print(f"Error: Source directory '{source_dir}' not found.")
-            return # Exit the function if source dir doesn't exist
+            return 1  # Exit the function with an error status code
 
         # Add all files in the source directory to the zip file
         for root, dirs, files in os.walk(source_dir):
@@ -31,8 +31,8 @@ def make_zip():
                 myzip.write(file_path, archive_path)
 
         print(f"Successfully created zip file at: {output_path}")
+        return 0  # Exit the function with a success status code
 
 # Run the function
-make_zip()
-sys.exit(0)  # Exit the script with a success status code
+sys.exit(make_zip())  # Exit the script with a success status code
 # This script creates a zip file containing all files from the 'auto-zip' directory
