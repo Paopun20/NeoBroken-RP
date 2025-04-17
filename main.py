@@ -1,5 +1,6 @@
 import zipfile
 import os
+import sys
 
 def make_zip():
     # Define the output directory and filename
@@ -33,3 +34,5 @@ def make_zip():
 
 # Run the function
 make_zip()
+sys.exit(0)  # Exit the script with a success status code
+# This script creates a zip file containing all files from the 'auto-zip' directory
